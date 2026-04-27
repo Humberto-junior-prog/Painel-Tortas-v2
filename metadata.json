@@ -1,0 +1,5 @@
+{
+  "name": "API Painel de Tortas",
+  "description": "Sistema de gerenciamento de produção de tortas em tempo real.",
+  "requestFramePermissions": []
+}

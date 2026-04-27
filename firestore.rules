@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /produtos/{produtoId}
+    // Fields:
+    //   - id: number (required)
+    //   - nome: string (required)
+    //   - centroManha: list of numbers (required)
+    //   - centroTarde: list of numbers (required)
+    //   - sabugo: list of numbers (required)
+    //   - lages: list of numbers (required)
+    //   - ordem: number (optional)
+    //
+    // Collection: /producao/{producaoId}
+    // Fields:
+    //   - secaoId: string (required)
+    //   - produtoId: number (required)
+    //   - data: string (required, format DD/MM/YYYY)
+    //   - produzir: bool (optional)
+    //   - separar: bool (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "humbertosvalente@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidProduto(data) {
+      return data.nome is string && data.nome.size() > 0 && data.nome.size() < 100 &&
+             data.centroManha is list && data.centroManha.size() == 7 &&
+             data.centroTarde is list && data.centroTarde.size() == 7 &&
+             data.sabugo is list && data.sabugo.size() == 7 &&
+             data.lages is list && data.lages.size() == 7;
+    }
+
+    function isValidProducao(data) {
+      return data.secaoId is string && data.secaoId.size() > 0 &&
+             data.produtoId is number &&
+             data.data is string && data.data.matches("^\\d{2}/\\d{2}/\\d{4}$");
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Allow public read access to products, but only admin can write
+    match /produtos/{produtoId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidProduto(request.resource.data);
+    }
+
+    // Allow public read and write access to production status so anyone can mark as produced
+    match /producao/{producaoId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}

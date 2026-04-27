@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "Produto": {
+      "title": "Produto",
+      "description": "Definição de um produto e suas quantidades programadas por dia da semana.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID único do produto" },
+        "nome": { "type": "string", "description": "Nome do produto" },
+        "centroManha": { "type": "array", "items": { "type": "number" }, "description": "Quantidades para o Centro (Manhã) de Dom a Sáb" },
+        "centroTarde": { "type": "array", "items": { "type": "number" }, "description": "Quantidades para o Centro (Tarde) de Dom a Sáb" },
+        "sabugo": { "type": "array", "items": { "type": "number" }, "description": "Quantidades para o Sabugo de Dom a Sáb" },
+        "lages": { "type": "array", "items": { "type": "number" }, "description": "Quantidades para o Lages de Dom a Sáb" },
+        "ordem": { "type": "number", "description": "Ordem de exibição na lista" }
+      },
+      "required": ["nome", "centroManha", "centroTarde", "sabugo", "lages"]
+    },
+    "ProducaoDia": {
+      "title": "Produção do Dia",
+      "description": "Estado da produção (produzido/separado) para um produto em uma seção específica em uma data.",
+      "type": "object",
+      "properties": {
+        "secaoId": { "type": "string", "description": "ID da seção (ex: centro_manha)" },
+        "produtoId": { "type": "number", "description": "ID do produto" },
+        "data": { "type": "string", "description": "Data no formato DD/MM/YYYY" },
+        "produzir": { "type": "boolean", "description": "Se o produto foi produzido" },
+        "separar": { "type": "boolean", "description": "Se o produto foi separado" }
+      },
+      "required": ["secaoId", "produtoId", "data"]
+    }
+  },
+  "firestore": {
+    "/produtos/{produtoId}": {
+      "schema": "Produto",
+      "description": "Lista de produtos cadastrados no sistema."
+    },
+    "/producao/{producaoId}": {
+      "schema": "ProducaoDia",
+      "description": "Registro de status de produção diária."
+    }
+  }
+}

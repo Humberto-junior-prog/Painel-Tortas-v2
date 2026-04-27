@@ -1,0 +1,11 @@
+Com certeza! Vou gerar uma imagem que ilustra como essa nova **Grade de Planejamento** vai funcionar. 
+
+Ela foi desenhada para que você tenha uma visão "de cima" de toda a sua produção semanal, permitindo identificar rapidamente dias sobrecarregados ou conflitos entre produtos (como o exemplo da Lasanha e Panqueca na quinta-feira).
+
+**O que você verá na imagem:**
+*   **Seletor de Setor:** No topo, para você escolher se quer ver o Sabugo, Lages ou Centro.
+*   **Tabela Mestra:** Todos os produtos nas linhas e os dias da semana nas colunas.
+*   **Totais por Dia:** Uma linha de "Total" no rodapé que soma tudo o que está planejado para aquele dia específico.
+*   **Visual Limpo:** Cores que facilitam a leitura rápida (Índigo e Cinza), seguindo o estilo do seu painel atual.
+
+Estou gerando a imagem agora para você validar......
