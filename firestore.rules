@@ -60,7 +60,8 @@ service cloud.firestore {
     // Allow public read access to products, but only admin can write
     match /produtos/{produtoId} {
       allow read: if true;
-      allow write: if isAdmin() && isValidProduto(request.resource.data);
+      allow create, update: if isAdmin() && isValidProduto(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Allow public read and write access to production status so anyone can mark as produced

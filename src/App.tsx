@@ -353,17 +353,23 @@ export default function App() {
       });
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'produtos');
+      alert("Erro ao salvar produto. Verifique suas permissões.");
     }
   };
 
   const handleDeleteProduct = async (produto: Produto) => {
-    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+    if (!confirm(`Tem certeza que deseja excluir "${produto.nome}"?`)) return;
     if (!produto.docId) return;
 
     try {
       await deleteDoc(doc(db, 'produtos', produto.docId));
-    } catch (err) {
+    } catch (err: any) {
       handleFirestoreError(err, OperationType.DELETE, `produtos/${produto.docId}`);
+      if (err.message && err.message.includes('permission-denied')) {
+        alert("Acesso Negado: Você não tem permissão para excluir produtos.");
+      } else {
+        alert("Erro ao tentar excluir o produto.");
+      }
     }
   };
 
