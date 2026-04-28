@@ -100,6 +100,8 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Centro');
+  const [gridSector, setGridSector] = useState<'centroManha' | 'centroTarde' | 'sabugo' | 'lages'>('centroManha');
+
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -126,6 +128,15 @@ export default function App() {
   });
 
   const [isSeeding, setIsSeeding] = useState(false);
+  const formRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isEditing || isAdding) {
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [isEditing, isAdding]);
 
   useEffect(() => {
     // Auth Listener
@@ -317,7 +328,7 @@ export default function App() {
     );
   }
 
-  const tabs = ['Centro', 'Sabugo', 'Lages', 'Gerenciamento'];
+  const tabs = ['Centro', 'Sabugo', 'Lages', 'Planejamento', 'Gerenciamento'];
 
   const secoes = [
     { id: 'centro_manha', label: 'Centro (Manhã)', icon: <Clock className="w-5 h-5" />, tab: 'Centro' },
@@ -432,6 +443,108 @@ export default function App() {
     }
   };
 
+  const handleUpdateGridQty = async (produto: Produto, dayIdx: number, newVal: number) => {
+    if (!produto.docId) return;
+    const currentArray = [...(produto[gridSector] as number[])];
+    currentArray[dayIdx] = newVal;
+    
+    try {
+      await updateDoc(doc(db, 'produtos', produto.docId), {
+        [gridSector]: currentArray
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `produtos/${produto.docId}`);
+    }
+  };
+
+  const renderPlanejamento = () => {
+    const totals = [0, 0, 0, 0, 0, 0, 0];
+    produtos.forEach(p => {
+      const sectorData = p[gridSector] || [0, 0, 0, 0, 0, 0, 0];
+      sectorData.forEach((val, idx) => {
+        totals[idx] += val;
+      });
+    });
+
+    const sectorOptions = [
+      { id: 'centroManha', label: 'Centro Manhã' },
+      { id: 'centroTarde', label: 'Centro Tarde' },
+      { id: 'sabugo', label: 'Sabugo' },
+      { id: 'lages', label: 'Lages' }
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 uppercase">Grade de Planejamento</h2>
+              <p className="text-slate-500 font-medium tracking-tight">Visão semanal de produção e balanceamento de carga</p>
+            </div>
+            
+            <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start">
+              {sectorOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setGridSector(opt.id as any)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${gridSector === opt.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-100">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-900 text-white">
+                  <th className="p-4 text-xs font-black uppercase tracking-widest sticky left-0 bg-slate-900 z-10">Produto</th>
+                  {diasSemana.map((dia) => (
+                    <th key={dia} className="p-4 text-center text-xs font-black uppercase tracking-widest min-w-[80px]">{dia}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {produtos.map((produto) => (
+                  <tr key={produto.docId || produto.id} className="hover:bg-indigo-50/30 transition-colors group">
+                    <td className="p-4 font-bold text-slate-700 bg-white sticky left-0 z-10 group-hover:bg-indigo-50 transition-colors border-r border-slate-50">
+                      {produto.nome}
+                    </td>
+                    {(produto[gridSector] || [0, 0, 0, 0, 0, 0, 0]).map((qtd, idx) => (
+                      <td key={idx} className="p-2 text-center">
+                        <input 
+                          type="number"
+                          inputMode="numeric"
+                          value={qtd}
+                          onChange={(e) => handleUpdateGridQty(produto, idx, parseInt(e.target.value) || 0)}
+                          onFocus={(e) => e.target.select()}
+                          className={`w-full max-w-[60px] mx-auto bg-transparent border-0 text-center font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 rounded-lg py-1 transition-all ${qtd > 0 ? 'text-indigo-600' : 'text-slate-300'}`}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                <tr className="font-black text-slate-900">
+                  <td className="p-4 uppercase tracking-widest text-xs sticky left-0 bg-slate-50 z-10">Total Diário</td>
+                  {totals.map((total, idx) => (
+                    <td key={idx} className="p-4 text-center">
+                      <span className="inline-block px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-700">
+                        {total}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderAdmin = () => {
     if (!isAdminAuthenticated && !isAdminUser) {
       return (
@@ -492,6 +605,7 @@ export default function App() {
 
       {(isAdding || isEditing) && (
         <motion.div 
+          ref={formRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white p-6 rounded-3xl shadow-xl border-2 border-indigo-100"
@@ -541,6 +655,7 @@ export default function App() {
                             currentArray[idx] = newVal;
                             setFormData({ ...formData, [secao.id]: currentArray });
                           }}
+                          onFocus={(e) => e.target.select()}
                           className="w-full bg-white border border-slate-200 py-2 px-1 md:p-2 rounded-lg text-center text-sm md:text-base font-bold text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
                         />
                       </div>
@@ -789,6 +904,8 @@ export default function App() {
                   </div>
                 </div>
               </motion.section>
+            ) : activeTab === 'Planejamento' ? (
+              renderPlanejamento()
             ) : activeTab === 'Gerenciamento' ? (
               renderAdmin()
             ) : (
